@@ -8,19 +8,57 @@ Create a `.env` file with:
 
 ```bash
 SUPABASE_URL=
-SUPABASE_ANON_KEY=
+SUPABASE_PUBLISHABLE_KEY=
 YOUTUBE_API_KEY=
+SUPABASE_DB_PASSWORD=
 ```
 
 ### Database
 
-Run the SQL in `supabase/schema.sql` inside your Supabase SQL editor, then enable Realtime for `rooms`, `queue`, and `votes`.
+Kapow now uses Supabase CLI migrations instead of relying on manual SQL copy/paste.
+
+Local test database:
+
+```bash
+npm run db:start
+npm run db:reset
+npm run db:lint
+```
+
+That gives you a disposable local Supabase stack on Docker and applies everything in `supabase/migrations`.
+
+Remote project sync:
+
+```bash
+npx supabase link --project-ref <your-project-ref> -p "$SUPABASE_DB_PASSWORD"
+npm run db:push:remote
+```
+
+If you still need a one-off SQL fallback, `supabase/schema.sql` is kept as a reference snapshot, but migrations are now the source of truth.
+
+CI:
+
+- `.github/workflows/supabase-db.yml` boots a local Supabase stack on every PR/main push
+- it runs `supabase db reset --local --no-seed`
+- then it runs `supabase db lint --local --schema public --fail-on error`
+- `.github/workflows/supabase-db-deploy.yml` can push migrations to your hosted Supabase via GitHub Actions once these repository secrets are set:
+  `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
 
 ### Development
 
 ```bash
 npm install
 npm run dev
+```
+
+### Common DB Commands
+
+```bash
+npm run db:start
+npm run db:stop
+npm run db:reset
+npm run db:lint
+npm run db:test
 ```
 
 ### Production build

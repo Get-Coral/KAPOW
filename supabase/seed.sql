@@ -1,0 +1,2 @@
+-- Keep this file so `supabase db reset` has a stable seed target.
+-- Add local-only demo rooms or fixtures here when needed.
