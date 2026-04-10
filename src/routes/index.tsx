@@ -1,87 +1,139 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { useMutation } from "@tanstack/react-query";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { DoorOpen, PartyPopper, Radio } from "lucide-react";
+import { useState } from "react";
+import {
+	ComicWordmark,
+	HeroFrame,
+	JoinCodeInput,
+	NeonPanel,
+} from "#/components/kapow-ui";
+import { formatJoinCode } from "#/lib/utils";
+import { createRoom } from "#/server/rooms";
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute("/")({
+	component: LandingPage,
+});
 
-function App() {
-  return (
-    <main className="page-wrap px-4 pb-8 pt-14">
-      <section className="island-shell rise-in relative overflow-hidden rounded-[2rem] px-6 py-10 sm:px-10 sm:py-14">
-        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.32),transparent_66%)]" />
-        <div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(47,106,74,0.18),transparent_66%)]" />
-        <p className="island-kicker mb-3">TanStack Start Base Template</p>
-        <h1 className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-[var(--sea-ink)] sm:text-6xl">
-          Start simple, ship quickly.
-        </h1>
-        <p className="mb-8 max-w-2xl text-base text-[var(--sea-ink-soft)] sm:text-lg">
-          This base starter intentionally keeps things light: two routes, clean
-          structure, and the essentials you need to build from scratch.
-        </p>
-        <div className="flex flex-wrap gap-3">
-          <a
-            href="/about"
-            className="rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-[var(--lagoon-deep)] no-underline transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)]"
-          >
-            About This Starter
-          </a>
-          <a
-            href="https://tanstack.com/router"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-[rgba(23,58,64,0.2)] bg-white/50 px-5 py-2.5 text-sm font-semibold text-[var(--sea-ink)] no-underline transition hover:-translate-y-0.5 hover:border-[rgba(23,58,64,0.35)]"
-          >
-            Router Guide
-          </a>
-        </div>
-      </section>
+function LandingPage() {
+	const navigate = useNavigate();
+	const [joinCode, setJoinCode] = useState("");
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          [
-            'Type-Safe Routing',
-            'Routes and links stay in sync across every page.',
-          ],
-          [
-            'Server Functions',
-            'Call server code from your UI without creating API boilerplate.',
-          ],
-          [
-            'Streaming by Default',
-            'Ship progressively rendered responses for faster experiences.',
-          ],
-          [
-            'Tailwind Native',
-            'Design quickly with utility-first styling and reusable tokens.',
-          ],
-        ].map(([title, desc], index) => (
-          <article
-            key={title}
-            className="island-shell feature-card rise-in rounded-2xl p-5"
-            style={{ animationDelay: `${index * 90 + 80}ms` }}
-          >
-            <h2 className="mb-2 text-base font-semibold text-[var(--sea-ink)]">
-              {title}
-            </h2>
-            <p className="m-0 text-sm text-[var(--sea-ink-soft)]">{desc}</p>
-          </article>
-        ))}
-      </section>
+	function getCreateRoomErrorMessage(error: unknown) {
+		if (error instanceof Error && error.message) {
+			return error.message;
+		}
 
-      <section className="island-shell mt-8 rounded-2xl p-6">
-        <p className="island-kicker mb-2">Quick Start</p>
-        <ul className="m-0 list-disc space-y-2 pl-5 text-sm text-[var(--sea-ink-soft)]">
-          <li>
-            Edit <code>src/routes/index.tsx</code> to customize the home page.
-          </li>
-          <li>
-            Update <code>src/components/Header.tsx</code> and{' '}
-            <code>src/components/Footer.tsx</code> for brand links.
-          </li>
-          <li>
-            Add routes in <code>src/routes</code> and tweak visual tokens in{' '}
-            <code>src/styles.css</code>.
-          </li>
-        </ul>
-      </section>
-    </main>
-  )
+		return "Room creation failed. If you just changed .env, restart the dev server. If not, the Supabase tables probably still need to be created.";
+	}
+
+	const createRoomMutation = useMutation({
+		mutationFn: () => createRoom(),
+		onSuccess: ({ code, hostToken }) => {
+			navigate({
+				to: "/host/$code",
+				params: { code },
+				search: { token: hostToken },
+			});
+		},
+	});
+
+	function handleJoin() {
+		const nextCode = formatJoinCode(joinCode);
+
+		if (!nextCode) {
+			return;
+		}
+
+		navigate({
+			to: "/room/$code",
+			params: { code: nextCode },
+		});
+	}
+
+	return (
+		<main className="page-shell">
+			<HeroFrame
+				eyebrow="Karaoke Command Center"
+				title="Spin up a room, scan the code, and let the crowd run the queue."
+				subtitle="Kapow is built for party hosts: guests search karaoke tracks, vote the best one up, and the host keeps the night moving from a dedicated control booth."
+				aside={<ComicWordmark />}
+			/>
+
+			<div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+				<NeonPanel className="p-6">
+					<p className="hero-eyebrow">Host Tonight</p>
+					<h2 className="section-title">Create a brand new room</h2>
+					<p className="section-copy">
+						You’ll get a host token, guest link, display view, and QR code in
+						one move.
+					</p>
+					{createRoomMutation.isError ? (
+						<div className="mt-5 rounded-2xl border border-[#ff8d6b]/35 bg-[#4a1120]/60 p-4 text-left">
+							<p className="text-sm font-bold tracking-[0.16em] uppercase text-[#ffb6a0]">
+								Create Room Failed
+							</p>
+							<p className="mt-2 text-base text-white/85">
+								{getCreateRoomErrorMessage(createRoomMutation.error)}
+							</p>
+						</div>
+					) : null}
+					<button
+						type="button"
+						className="kapow-button kapow-button--accent mt-6"
+						onClick={() => createRoomMutation.mutate()}
+						disabled={createRoomMutation.isPending}
+					>
+						<PartyPopper size={18} />
+						{createRoomMutation.isPending ? "Launching room..." : "Create Room"}
+					</button>
+				</NeonPanel>
+
+				<NeonPanel className="p-6">
+					<p className="hero-eyebrow">Join Existing Room</p>
+					<h2 className="section-title">Already got the code?</h2>
+					<p className="section-copy">
+						Hop in as a guest and start feeding the queue your best karaoke
+						pick.
+					</p>
+					<div className="mt-6">
+						<JoinCodeInput
+							value={joinCode}
+							onChange={(value) => setJoinCode(formatJoinCode(value))}
+							onSubmit={handleJoin}
+							placeholder="ABCD"
+						/>
+					</div>
+				</NeonPanel>
+			</div>
+
+			<div className="mt-6 grid gap-4 md:grid-cols-3">
+				{[
+					{
+						icon: <DoorOpen size={20} />,
+						title: "Room-based flow",
+						body: "Each party gets its own live queue, host link, and display mode.",
+					},
+					{
+						icon: <Radio size={20} />,
+						title: "Realtime reactions",
+						body: "Supabase subscriptions keep votes, queue order, and room status synced.",
+					},
+					{
+						icon: <PartyPopper size={20} />,
+						title: "Built for a TV",
+						body: "The display view goes full comic-book spectacle with now playing focus.",
+					},
+				].map((feature) => (
+					<NeonPanel key={feature.title} className="p-5">
+						<div className="mb-4 inline-flex rounded-full bg-[#ffd84d]/15 p-3 text-[#ffd84d]">
+							{feature.icon}
+						</div>
+						<h3 className="text-xl font-bold text-white">{feature.title}</h3>
+						<p className="mt-2 text-white/72">{feature.body}</p>
+					</NeonPanel>
+				))}
+			</div>
+		</main>
+	);
 }
