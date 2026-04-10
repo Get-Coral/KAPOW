@@ -236,101 +236,128 @@ function getNextWaitingSong(queue: QueueItem[]) {
 	);
 }
 
+const CACHE_TTL_HOURS = 1;
+
+async function fetchYouTubeResults(query: string): Promise<SongSearchResult[]> {
+	const searchParams = new URLSearchParams({
+		key: getYouTubeApiKey(),
+		part: "snippet",
+		maxResults: "8",
+		q: `${query} karaoke`,
+		type: "video",
+	});
+
+	const response = await fetch(
+		`https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`,
+	);
+
+	if (!response.ok) {
+		throw new Error("YouTube search failed");
+	}
+
+	const json = (await response.json()) as {
+		items?: Array<{
+			id?: { videoId?: string };
+			snippet?: {
+				title?: string;
+				channelTitle?: string;
+				thumbnails?: {
+					high?: { url?: string };
+					medium?: { url?: string };
+					default?: { url?: string };
+				};
+			};
+		}>;
+	};
+	const searchItems = (json.items ?? [])
+		.map((item) => {
+			const id = item.id?.videoId;
+			const title = item.snippet?.title;
+
+			if (!id || !title) {
+				return null;
+			}
+
+			return {
+				id,
+				title,
+				artist: item.snippet?.channelTitle ?? "Unknown Artist",
+				thumbnail:
+					item.snippet?.thumbnails?.high?.url ??
+					item.snippet?.thumbnails?.medium?.url ??
+					item.snippet?.thumbnails?.default?.url ??
+					"",
+			};
+		})
+		.filter((item): item is SongSearchResult => Boolean(item));
+
+	if (searchItems.length === 0) {
+		return [];
+	}
+
+	const detailsParams = new URLSearchParams({
+		key: getYouTubeApiKey(),
+		part: "status",
+		id: searchItems.map((item) => item.id).join(","),
+	});
+	const detailsResponse = await fetch(
+		`https://www.googleapis.com/youtube/v3/videos?${detailsParams.toString()}`,
+	);
+
+	if (!detailsResponse.ok) {
+		throw new Error("YouTube video details lookup failed");
+	}
+
+	const detailsJson = (await detailsResponse.json()) as {
+		items?: Array<{
+			id?: string;
+			status?: { embeddable?: boolean };
+		}>;
+	};
+	const embeddableMap = new Map(
+		(detailsJson.items ?? []).map((item) => [
+			item.id ?? "",
+			item.status?.embeddable,
+		]),
+	);
+
+	return searchItems
+		.map((item) => ({
+			...item,
+			embeddable: embeddableMap.get(item.id) !== false,
+		}))
+		.filter((item) => item.embeddable !== false);
+}
+
 export const searchYouTube = createServerFn({ method: "GET" })
 	.inputValidator((input: { query: string }) => ({
 		query: requireString(input.query, "query"),
 	}))
 	.handler(async ({ data }): Promise<SongSearchResult[]> => {
-		const searchParams = new URLSearchParams({
-			key: getYouTubeApiKey(),
-			part: "snippet",
-			maxResults: "8",
-			q: `${data.query} karaoke`,
-			type: "video",
-		});
+		const cacheKey = data.query.toLowerCase();
+		const supabase = createServerSupabaseClient();
+		const cached = await supabase
+			.from("search_cache")
+			.select("results, created_at")
+			.eq("query", cacheKey)
+			.maybeSingle();
 
-		const response = await fetch(
-			`https://www.googleapis.com/youtube/v3/search?${searchParams.toString()}`,
-		);
+		if (cached.data) {
+			const ageHours =
+				(Date.now() - new Date(cached.data.created_at).getTime()) / 3_600_000;
 
-		if (!response.ok) {
-			throw new Error("YouTube search failed");
+			if (ageHours < CACHE_TTL_HOURS) {
+				return cached.data.results as SongSearchResult[];
+			}
 		}
 
-		const json = (await response.json()) as {
-			items?: Array<{
-				id?: { videoId?: string };
-				snippet?: {
-					title?: string;
-					channelTitle?: string;
-					thumbnails?: {
-						high?: { url?: string };
-						medium?: { url?: string };
-						default?: { url?: string };
-					};
-				};
-			}>;
-		};
-		const searchItems = (json.items ?? [])
-			.map((item) => {
-				const id = item.id?.videoId;
-				const title = item.snippet?.title;
+		const results = await fetchYouTubeResults(data.query);
 
-				if (!id || !title) {
-					return null;
-				}
+		await supabase
+			.from("search_cache")
+			.upsert({ query: cacheKey, results, created_at: new Date().toISOString() });
 
-				return {
-					id,
-					title,
-					artist: item.snippet?.channelTitle ?? "Unknown Artist",
-					thumbnail:
-						item.snippet?.thumbnails?.high?.url ??
-						item.snippet?.thumbnails?.medium?.url ??
-						item.snippet?.thumbnails?.default?.url ??
-						"",
-				};
-			})
-			.filter((item): item is SongSearchResult => Boolean(item));
-
-		if (searchItems.length === 0) {
-			return [];
-		}
-
-		const detailsParams = new URLSearchParams({
-			key: getYouTubeApiKey(),
-			part: "status",
-			id: searchItems.map((item) => item.id).join(","),
-		});
-		const detailsResponse = await fetch(
-			`https://www.googleapis.com/youtube/v3/videos?${detailsParams.toString()}`,
-		);
-
-		if (!detailsResponse.ok) {
-			throw new Error("YouTube video details lookup failed");
-		}
-
-		const detailsJson = (await detailsResponse.json()) as {
-			items?: Array<{
-				id?: string;
-				status?: {
-					embeddable?: boolean;
-				};
-			}>;
-		};
-		const embeddableMap = new Map(
-			(detailsJson.items ?? []).map((item) => [
-				item.id ?? "",
-				item.status?.embeddable,
-			]),
-		);
-
-		return searchItems
-			.map((item) => ({
-				...item,
-				embeddable: embeddableMap.get(item.id) !== false,
-			}))
-			.filter((item) => item.embeddable !== false);
+		return results;
 	});
 
 export const createRoom = createServerFn({ method: "POST" }).handler(

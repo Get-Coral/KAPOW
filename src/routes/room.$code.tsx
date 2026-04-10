@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Heart, Lock, MicVocal, SearchCode, Users } from "lucide-react";
-import { startTransition, useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import {
 	BackHomeButton,
 	ComicWordmark,
@@ -35,7 +35,6 @@ function GuestRoomPage() {
 	const [search, setSearch] = useState("");
 	const [results, setResults] = useState<SongSearchResult[]>([]);
 	const [submissionNotice, setSubmissionNotice] = useState("");
-	const latestSearchRef = useRef("");
 
 	useEffect(() => {
 		const storedGuestName = getStoredGuestName();
@@ -45,10 +44,8 @@ function GuestRoomPage() {
 
 	const searchMutation = useMutation({
 		mutationFn: (value: string) => searchYouTube({ data: { query: value } }),
-		onSuccess: (data, value) => {
-			if (latestSearchRef.current === value.trim()) {
-				setResults(data);
-			}
+		onSuccess: (data) => {
+			setResults(data);
 		},
 	});
 	const addSongMutation = useMutation({
@@ -116,7 +113,6 @@ function GuestRoomPage() {
 			return;
 		}
 
-		latestSearchRef.current = nextSearch;
 		searchMutation.mutate(nextSearch);
 	}
 
@@ -132,25 +128,6 @@ function GuestRoomPage() {
 			setStoredGuestName(nextName);
 		});
 	}
-
-	useEffect(() => {
-		const nextSearch = search.trim();
-
-		if (!nextSearch) {
-			latestSearchRef.current = "";
-			setResults([]);
-			return;
-		}
-
-		const timeoutId = window.setTimeout(() => {
-			latestSearchRef.current = nextSearch;
-			searchMutation.mutate(nextSearch);
-		}, 350);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-		};
-	}, [search, searchMutation.mutate]);
 
 	if (roomQuery.isPending) {
 		return (
