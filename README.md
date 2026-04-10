@@ -1,153 +1,90 @@
-## Kapow
+# KAPOW
 
-Comic-book karaoke queue manager built with TanStack Start, Tailwind CSS, TanStack Query, and Supabase.
+Comic-book karaoke queue manager. Hosts spin up a room, guests scan a QR code and search for tracks, the crowd votes songs up the queue, and the host runs the night from a dedicated control booth.
 
-### Environment
+## Stack
 
-Create a `.env` file with:
+- **[TanStack Start](https://tanstack.com/start)** — React SSR framework with file-based routing
+- **[TanStack Router](https://tanstack.com/router) + [TanStack Query](https://tanstack.com/query)** — type-safe routing and server-state management
+- **[Supabase](https://supabase.com)** — PostgreSQL database with realtime subscriptions for live queue/vote sync
+- **[Tailwind CSS v4](https://tailwindcss.com)** — styling
+- **[dnd-kit](https://dndkit.com)** — drag-and-drop queue reordering (host view)
+- **YouTube Data API v3** — song search
+
+## How it works
+
+1. Host creates a room → gets a host token, a 6-character join code, and a QR code
+2. Guests join via the code or QR → search YouTube for karaoke tracks → add to queue with their name
+3. Everyone votes; highest-voted pending song rises to the top
+4. Host manages playback from `/host/:code`, drives the TV display at `/display/:code`
+
+## Environment
+
+Create a `.env` file at the project root:
 
 ```bash
 SUPABASE_URL=
 SUPABASE_PUBLISHABLE_KEY=
-YOUTUBE_API_KEY=
 SUPABASE_DB_PASSWORD=
+YOUTUBE_API_KEY=
 ```
 
-### Database
-
-Kapow now uses Supabase CLI migrations instead of relying on manual SQL copy/paste.
-
-Local test database:
+## Development
 
 ```bash
-npm run db:start
-npm run db:reset
-npm run db:lint
+npm install
+npm run dev        # starts on http://localhost:3000
 ```
 
-That gives you a disposable local Supabase stack on Docker and applies everything in `supabase/migrations`.
+## Database
 
-Remote project sync:
+Migrations live in `supabase/migrations/` and are the source of truth. `supabase/schema.sql` is kept as a reference snapshot only.
+
+### Local
+
+Requires [Docker](https://www.docker.com) and the [Supabase CLI](https://supabase.com/docs/guides/cli).
+
+```bash
+npm run db:start   # boot local Supabase stack
+npm run db:reset   # apply migrations from scratch
+npm run db:lint    # lint schema for issues
+npm run db:test    # reset + lint in one step
+npm run db:stop    # tear down
+```
+
+### Remote
 
 ```bash
 npx supabase link --project-ref <your-project-ref> -p "$SUPABASE_DB_PASSWORD"
 npm run db:push:remote
 ```
 
-If you still need a one-off SQL fallback, `supabase/schema.sql` is kept as a reference snapshot, but migrations are now the source of truth.
+### CI
 
-CI:
+- `.github/workflows/supabase-db.yml` — boots a local Supabase stack on every PR and main push, runs `db reset` + `db lint`
+- `.github/workflows/supabase-db-deploy.yml` — pushes migrations to hosted Supabase on merge; requires repository secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
 
-- `.github/workflows/supabase-db.yml` boots a local Supabase stack on every PR/main push
-- it runs `supabase db reset --local --no-seed`
-- then it runs `supabase db lint --local --schema public --fail-on error`
-- `.github/workflows/supabase-db-deploy.yml` can push migrations to your hosted Supabase via GitHub Actions once these repository secrets are set:
-  `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`
-
-### Development
-
-```bash
-npm install
-npm run dev
-```
-
-### Common DB Commands
-
-```bash
-npm run db:start
-npm run db:stop
-npm run db:reset
-npm run db:lint
-npm run db:test
-```
-
-### Production build
+## Build
 
 ```bash
 npm run build
+npm run preview
 ```
 
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
+## Code quality
 
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
+```bash
+npm run lint       # Biome lint
+npm run format     # Biome format
+npm run check      # Biome lint + format together
+npm test           # Vitest
 ```
 
-## API Routes
+## Routes
 
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+| Route | Description |
+|---|---|
+| `/` | Landing — create or join a room |
+| `/room/:code` | Guest view — search songs, add to queue, vote |
+| `/host/:code?token=` | Host control booth — manage queue, advance songs |
+| `/display/:code` | TV display — now playing, full-screen comic mode |
