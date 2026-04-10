@@ -27,7 +27,7 @@ ENV PORT=3000
 WORKDIR /app
 
 COPY --from=prod-deps /app/node_modules ./node_modules
-COPY --from=build /app/dist ./dist
+COPY --from=build /app/.output ./dist
 COPY --from=build /app/public ./public
 COPY --from=build /app/package.json ./package.json
 
