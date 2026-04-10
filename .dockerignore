@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+dist
+.output
+.env*
+supabase/.branches
+supabase/.temp
+*.md
