@@ -7,14 +7,15 @@ import {
 	ComicWordmark,
 	EmptyState,
 	HeroFrame,
+	HostNavTiles,
 	HostQueueBoard,
-	NavTiles,
 	NeonPanel,
 	QrCard,
 } from "#/components/kapow-ui";
 import { useRoomLiveQuery } from "#/hooks/use-room-live-query";
 import { queryKeys } from "#/lib/query";
-import { buildAbsoluteUrl } from "#/lib/utils";
+import type { QueueItem, RoomSnapshot } from "#/lib/types";
+import { buildAbsoluteUrl, sortQueue } from "#/lib/utils";
 import {
 	approveQueueItem,
 	type getRoomSnapshot,
@@ -31,14 +32,70 @@ export const Route = createFileRoute("/host/$code")({
 	component: HostRoomPage,
 });
 
+function reorderHostSnapshot(
+	snapshot: RoomSnapshot,
+	orderedQueueIds: string[],
+) {
+	const queueById = new Map(snapshot.queue.map((item) => [item.id, item]));
+	const reorderedItems = orderedQueueIds
+		.map((id) => queueById.get(id))
+		.filter((item): item is QueueItem => Boolean(item));
+
+	if (reorderedItems.length === 0) {
+		return snapshot;
+	}
+
+	const nextQueue = sortQueue(
+		snapshot.queue.map((item) => {
+			const reorderedIndex = orderedQueueIds.indexOf(item.id);
+
+			if (reorderedIndex >= 0) {
+				return {
+					...item,
+					position: reorderedIndex + 1,
+				};
+			}
+
+			if (item.status === "pending") {
+				return {
+					...item,
+					position: reorderedItems.length + item.position,
+				};
+			}
+
+			return item;
+		}),
+	) as QueueItem[];
+	const pendingQueue = nextQueue.filter((item) => item.status === "pending");
+	const nowPlaying =
+		nextQueue.find((item) => item.status === "playing") ?? null;
+	const nextUp =
+		nextQueue.find(
+			(item) =>
+				item.status === "waiting" &&
+				(!nowPlaying || item.position > nowPlaying.position),
+		) ??
+		nextQueue.find((item) => item.status === "waiting") ??
+		null;
+
+	return {
+		...snapshot,
+		queue: nextQueue,
+		pendingQueue,
+		nowPlaying,
+		nextUp,
+	};
+}
+
 function HostRoomPage() {
 	const { code } = Route.useParams();
 	const { token } = Route.useSearch();
 	const queryClient = useQueryClient();
 	const roomQuery = useRoomLiveQuery(code, token);
+	const roomQueryKey = queryKeys.room(code, token);
 
 	const setCache = (snapshot: Awaited<ReturnType<typeof getRoomSnapshot>>) => {
-		queryClient.setQueryData(queryKeys.room(code, token), snapshot);
+		queryClient.setQueryData(roomQueryKey, snapshot);
 	};
 
 	const playMutation = useMutation({
@@ -96,7 +153,31 @@ function HostRoomPage() {
 					orderedQueueIds,
 				},
 			}),
+		onMutate: async (orderedQueueIds) => {
+			await queryClient.cancelQueries({ queryKey: roomQueryKey });
+			const previousSnapshot =
+				queryClient.getQueryData<Awaited<ReturnType<typeof getRoomSnapshot>>>(
+					roomQueryKey,
+				);
+
+			if (previousSnapshot) {
+				queryClient.setQueryData(
+					roomQueryKey,
+					reorderHostSnapshot(previousSnapshot, orderedQueueIds),
+				);
+			}
+
+			return { previousSnapshot };
+		},
+		onError: (_error, _variables, context) => {
+			if (context?.previousSnapshot) {
+				queryClient.setQueryData(roomQueryKey, context.previousSnapshot);
+			}
+		},
 		onSuccess: setCache,
+		onSettled: () => {
+			void queryClient.invalidateQueries({ queryKey: roomQueryKey });
+		},
 	});
 	const statusMutation = useMutation({
 		mutationFn: (status: "open" | "closed") =>
@@ -228,7 +309,7 @@ function HostRoomPage() {
 
 				<div className="space-y-6">
 					<QrCard url={joinUrl} />
-					<NavTiles code={code} hostToken={token} />
+					<HostNavTiles code={code} hostToken={token} />
 				</div>
 			</div>
 		</main>

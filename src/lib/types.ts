@@ -26,6 +26,7 @@ export interface VoteRow {
 	id: string;
 	queue_id: string;
 	fingerprint: string;
+	voter_name: string | null;
 }
 
 export interface SongSearchResult {

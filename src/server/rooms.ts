@@ -65,6 +65,13 @@ function buildSessionStats(
 		acc[vote.fingerprint] = (acc[vote.fingerprint] ?? 0) + 1;
 		return acc;
 	}, {});
+	const voterNames = votes.reduce<Record<string, string>>((acc, vote) => {
+		if (vote.voter_name?.trim()) {
+			acc[vote.fingerprint] = vote.voter_name.trim();
+		}
+
+		return acc;
+	}, {});
 	const topVoterEntry = Object.entries(voterCounts).sort((left, right) => {
 		if (right[1] !== left[1]) {
 			return right[1] - left[1];
@@ -84,7 +91,7 @@ function buildSessionStats(
 		{
 			label: "Top Hype Giver",
 			value: topVoterEntry
-				? `${fingerprintAlias(topVoterEntry[0])} • ${topVoterEntry[1]} vote${topVoterEntry[1] === 1 ? "" : "s"}`
+				? `${voterNames[topVoterEntry[0]] ?? fingerprintAlias(topVoterEntry[0])} • ${topVoterEntry[1]} vote${topVoterEntry[1] === 1 ? "" : "s"}`
 				: "No votes yet",
 			accent: "#4fd5ff",
 		},
@@ -150,11 +157,11 @@ async function loadSnapshot(
 		const [voteResult, ownVoteResult] = await Promise.all([
 			supabase
 				.from("votes")
-				.select("id, queue_id, fingerprint")
+				.select("id, queue_id, fingerprint, voter_name")
 				.in("queue_id", queueIds),
 			supabase
 				.from("votes")
-				.select("id, queue_id, fingerprint")
+				.select("id, queue_id, fingerprint, voter_name")
 				.in("queue_id", queueIds)
 				.eq("fingerprint", fingerprint),
 		]);
@@ -428,10 +435,16 @@ export const addSongToQueue = createServerFn({ method: "POST" })
 	});
 
 export const toggleVote = createServerFn({ method: "POST" })
-	.inputValidator((input: { code: string; queueId: string }) => ({
-		code: requireString(input.code, "room code"),
-		queueId: requireString(input.queueId, "queue id"),
-	}))
+	.inputValidator(
+		(input: { code: string; queueId: string; voterName?: string }) => ({
+			code: requireString(input.code, "room code"),
+			queueId: requireString(input.queueId, "queue id"),
+			voterName:
+				typeof input.voterName === "string"
+					? input.voterName.trim().slice(0, 32)
+					: "",
+		}),
+	)
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const fingerprint = getFingerprint();
@@ -459,6 +472,7 @@ export const toggleVote = createServerFn({ method: "POST" })
 			const insertResult = await supabase.from("votes").insert({
 				queue_id: data.queueId,
 				fingerprint,
+				voter_name: data.voterName || null,
 			});
 
 			if (insertResult.error) {
@@ -589,15 +603,40 @@ export const reorderQueue = createServerFn({ method: "POST" })
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const room = await ensureHostRoom(data.code, data.hostToken);
-		const updates = data.orderedQueueIds.map((id, index) => ({
-			id,
-			room_id: room.id,
-			position: index + 1,
-		}));
-		const result = await supabase.from("queue").upsert(updates);
+		const queueResult = await supabase
+			.from("queue")
+			.select("id, status")
+			.eq("room_id", room.id);
 
-		if (result.error) {
-			throw new Error(result.error.message);
+		if (queueResult.error) {
+			throw new Error(queueResult.error.message);
+		}
+
+		const reorderableIds = new Set(
+			(queueResult.data ?? [])
+				.filter(
+					(item) => item.status === "playing" || item.status === "waiting",
+				)
+				.map((item) => item.id),
+		);
+		const orderedQueueIds = data.orderedQueueIds.filter((id) =>
+			reorderableIds.has(id),
+		);
+
+		const updateResults = await Promise.all(
+			orderedQueueIds.map((id, index) =>
+				supabase
+					.from("queue")
+					.update({ position: index + 1 })
+					.eq("id", id)
+					.eq("room_id", room.id),
+			),
+		);
+
+		for (const result of updateResults) {
+			if (result.error) {
+				throw new Error(result.error.message);
+			}
 		}
 
 		return loadSnapshot(data.code, data.hostToken);

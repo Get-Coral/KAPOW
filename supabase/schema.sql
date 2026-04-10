@@ -25,9 +25,13 @@ create table if not exists public.votes (
   id uuid primary key default gen_random_uuid(),
   queue_id uuid not null references public.queue(id) on delete cascade,
   fingerprint varchar(128) not null,
+  voter_name varchar(32),
   created_at timestamptz not null default now(),
   unique (queue_id, fingerprint)
 );
+
+alter table public.votes
+add column if not exists voter_name varchar(32);
 
 alter table public.rooms enable row level security;
 alter table public.queue enable row level security;

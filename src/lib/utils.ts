@@ -10,7 +10,8 @@ export function sortQueue<
 	const rank = {
 		playing: 0,
 		waiting: 1,
-		done: 2,
+		pending: 2,
+		done: 3,
 	} as const;
 
 	return [...items].sort((left, right) => {

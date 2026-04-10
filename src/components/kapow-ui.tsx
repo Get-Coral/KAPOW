@@ -305,7 +305,10 @@ export function HostQueueBoard({
 	onApprove: (queueId: string) => void;
 }) {
 	const waitingAndPlaying = useMemo(
-		() => snapshot.queue.filter((item) => item.status !== "done"),
+		() =>
+			snapshot.queue.filter(
+				(item) => item.status === "playing" || item.status === "waiting",
+			),
 		[snapshot.queue],
 	);
 	const sensors = useSensors(
@@ -575,7 +578,7 @@ export function DisplayBoard({
 	joinUrl?: string;
 }) {
 	const waitingSongs = snapshot.queue.filter(
-		(item) => item.status === "waiting",
+		(item) => item.status === "waiting" && item.id !== snapshot.nextUp?.id,
 	);
 
 	return (
@@ -608,7 +611,7 @@ export function DisplayBoard({
 			</div>
 
 			<div className="display-layout">
-				<NeonPanel className="p-5">
+				<NeonPanel className="display-player-panel p-5">
 					{snapshot.nowPlaying ? (
 						<DisplayPlayer
 							song={snapshot.nowPlaying}
@@ -685,6 +688,7 @@ export function DisplayPlayer({
 		destroy: () => void;
 		playVideo: () => void;
 	} | null>(null);
+	const loadedSongIdRef = useRef<string | null>(null);
 	const handleEnded = useEffectEvent(() => {
 		onEnded?.(song.id);
 	});
@@ -726,11 +730,17 @@ export function DisplayPlayer({
 						},
 					},
 				});
+				loadedSongIdRef.current = song.song_id;
+				return;
+			}
+
+			if (loadedSongIdRef.current === song.song_id) {
 				return;
 			}
 
 			playerRef.current.loadVideoById(song.song_id);
 			playerRef.current.playVideo();
+			loadedSongIdRef.current = song.song_id;
 		});
 
 		return () => {
@@ -742,6 +752,7 @@ export function DisplayPlayer({
 		return () => {
 			playerRef.current?.destroy();
 			playerRef.current = null;
+			loadedSongIdRef.current = null;
 		};
 	}, []);
 
@@ -752,20 +763,15 @@ export function DisplayPlayer({
 	);
 }
 
-export function NavTiles({
+export function HostNavTiles({
 	code,
 	hostToken,
 }: {
 	code: string;
-	hostToken?: string;
+	hostToken: string;
 }) {
 	return (
-		<div
-			className={cn(
-				"grid gap-3",
-				hostToken ? "sm:grid-cols-3" : "sm:grid-cols-2",
-			)}
-		>
+		<div className="grid gap-3 sm:grid-cols-3">
 			<Link
 				to="/room/$code"
 				params={{ code }}
@@ -774,25 +780,42 @@ export function NavTiles({
 				<Music2 size={16} />
 				Guest View
 			</Link>
-			{hostToken ? (
-				<Link
-					to="/display/$code"
-					params={{ code }}
-					search={{ token: hostToken }}
-					className="kapow-button kapow-button--nav"
-				>
-					<Sparkles size={16} />
-					Display View
-				</Link>
-			) : null}
+			<Link
+				to="/display/$code"
+				params={{ code }}
+				search={{ token: hostToken }}
+				className="kapow-button kapow-button--nav"
+			>
+				<Sparkles size={16} />
+				Display View
+			</Link>
 			<Link
 				to="/host/$code"
 				params={{ code }}
-				search={hostToken ? { token: hostToken } : undefined}
+				search={{ token: hostToken }}
 				className="kapow-button kapow-button--nav"
 			>
 				<Crown size={16} />
 				Host View
+			</Link>
+		</div>
+	);
+}
+
+export function GuestNavTiles({ code }: { code: string }) {
+	return (
+		<div className="grid gap-3 sm:grid-cols-2">
+			<Link to="/" className="kapow-button kapow-button--nav">
+				<ArrowLeft size={16} />
+				Back Home
+			</Link>
+			<Link
+				to="/room/$code"
+				params={{ code }}
+				className="kapow-button kapow-button--nav"
+			>
+				<Music2 size={16} />
+				Guest View
 			</Link>
 		</div>
 	);

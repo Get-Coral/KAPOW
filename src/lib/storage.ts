@@ -17,6 +17,10 @@ export function setStoredGuestName(name: string) {
 	window.localStorage.setItem(GUEST_NAME_KEY, name);
 }
 
+export function hasStoredGuestName() {
+	return Boolean(getStoredGuestName().trim());
+}
+
 export function getSessionId() {
 	if (typeof window === "undefined") {
 		return "";
