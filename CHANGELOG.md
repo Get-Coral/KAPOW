@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/Get-Coral/KAPOW/compare/v1.0.0...v1.0.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* Use dev standards ([c164d53](https://github.com/Get-Coral/KAPOW/commit/c164d537198ced4e5abf9ca2059e23408ff9181c))
+* use global defaults ([bd068ad](https://github.com/Get-Coral/KAPOW/commit/bd068ad7e9159de848d9624bc686c348137ce381))
+
 ## 1.0.0 (2026-04-10)
 
 
