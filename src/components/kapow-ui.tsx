@@ -154,11 +154,7 @@ export function JoinCodeInput({
 				placeholder={placeholder}
 				maxLength={6}
 			/>
-			<button
-				type="button"
-				className="kapow-button kapow-button--accent"
-				onClick={onSubmit}
-			>
+			<button type="button" className="kapow-button kapow-button--accent" onClick={onSubmit}>
 				Join
 			</button>
 		</div>
@@ -178,9 +174,7 @@ export function SearchResults({
 }) {
 	return (
 		<div className="space-y-3">
-			{isLoading ? (
-				<p className="muted-copy">Scanning YouTube for karaoke anthems...</p>
-			) : null}
+			{isLoading ? <p className="muted-copy">Scanning YouTube for karaoke anthems...</p> : null}
 			{results.map((song) => (
 				<button
 					key={song.id}
@@ -191,12 +185,8 @@ export function SearchResults({
 				>
 					<img src={song.thumbnail} alt="" className="search-card__image" />
 					<span className="min-w-0 flex-1 text-left">
-						<strong className="line-clamp-1 block text-lg text-white">
-							{song.title}
-						</strong>
-						<span className="line-clamp-1 block text-sm text-white/75">
-							{song.artist}
-						</span>
+						<strong className="line-clamp-1 block text-lg text-white">{song.title}</strong>
+						<span className="line-clamp-1 block text-sm text-white/75">{song.artist}</span>
 					</span>
 					<span className="kapow-chip">
 						<Music2 size={16} />
@@ -247,21 +237,8 @@ export function QueueCard({
 	);
 }
 
-function SortableQueueRow({
-	item,
-	children,
-}: {
-	item: QueueItem;
-	children: React.ReactNode;
-}) {
-	const {
-		attributes,
-		listeners,
-		setNodeRef,
-		transform,
-		transition,
-		isDragging,
-	} = useSortable({
+function SortableQueueRow({ item, children }: { item: QueueItem; children: React.ReactNode }) {
+	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
 		id: item.id,
 	});
 
@@ -275,12 +252,7 @@ function SortableQueueRow({
 			className={cn(isDragging && "opacity-70")}
 		>
 			<div className="mb-3 flex items-start gap-2">
-				<button
-					type="button"
-					className="drag-handle"
-					{...attributes}
-					{...listeners}
-				>
+				<button type="button" className="drag-handle" {...attributes} {...listeners}>
 					<GripVertical size={18} />
 				</button>
 				<div className="flex-1">{children}</div>
@@ -305,15 +277,10 @@ export function HostQueueBoard({
 	onApprove: (queueId: string) => void;
 }) {
 	const waitingAndPlaying = useMemo(
-		() =>
-			snapshot.queue.filter(
-				(item) => item.status === "playing" || item.status === "waiting",
-			),
+		() => snapshot.queue.filter((item) => item.status === "playing" || item.status === "waiting"),
 		[snapshot.queue],
 	);
-	const sensors = useSensors(
-		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-	);
+	const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
 	function handleDragEnd(event: DragEndEvent) {
 		const { active, over } = event;
@@ -322,18 +289,14 @@ export function HostQueueBoard({
 			return;
 		}
 
-		const oldIndex = waitingAndPlaying.findIndex(
-			(item) => item.id === active.id,
-		);
+		const oldIndex = waitingAndPlaying.findIndex((item) => item.id === active.id);
 		const newIndex = waitingAndPlaying.findIndex((item) => item.id === over.id);
 
 		if (oldIndex < 0 || newIndex < 0) {
 			return;
 		}
 
-		onReorder(
-			arrayMove(waitingAndPlaying, oldIndex, newIndex).map((item) => item.id),
-		);
+		onReorder(arrayMove(waitingAndPlaying, oldIndex, newIndex).map((item) => item.id));
 	}
 
 	return (
@@ -381,22 +344,13 @@ export function HostQueueBoard({
 					<p className="hero-eyebrow !mb-0">Approved Queue</p>
 					<span className="vote-pill">{waitingAndPlaying.length}</span>
 				</div>
-				<DndContext
-					sensors={sensors}
-					collisionDetection={closestCenter}
-					onDragEnd={handleDragEnd}
-				>
-					<SortableContext
-						items={waitingAndPlaying}
-						strategy={verticalListSortingStrategy}
-					>
+				<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+					<SortableContext items={waitingAndPlaying} strategy={verticalListSortingStrategy}>
 						{waitingAndPlaying.map((item) => (
 							<SortableQueueRow key={item.id} item={item}>
 								<QueueCard
 									item={item}
-									emphasis={
-										item.status === "playing" ? "Now Singing" : "On Deck"
-									}
+									emphasis={item.status === "playing" ? "Now Singing" : "On Deck"}
 									action={
 										<div className="flex flex-col gap-2">
 											{item.status === "playing" ? (
@@ -466,11 +420,7 @@ export function QrCard({ url }: { url: string }) {
 				Scan To Join
 			</div>
 			{imageUrl ? (
-				<img
-					src={imageUrl}
-					alt="Room QR code"
-					className="mt-4 w-full rounded-2xl bg-white p-3"
-				/>
+				<img src={imageUrl} alt="Room QR code" className="mt-4 w-full rounded-2xl bg-white p-3" />
 			) : null}
 			<p className="mt-3 break-all text-sm text-white/70">{url}</p>
 		</NeonPanel>
@@ -502,22 +452,14 @@ export function CompactQrCard({ url }: { url: string }) {
 		<div className="display-qr-card">
 			<p className="hero-eyebrow !mb-2">Scan To Join</p>
 			{imageUrl ? (
-				<img
-					src={imageUrl}
-					alt="Join room QR code"
-					className="display-qr-image"
-				/>
+				<img src={imageUrl} alt="Join room QR code" className="display-qr-image" />
 			) : null}
 			<p className="display-qr-code">{url}</p>
 		</div>
 	);
 }
 
-export function DisplayCelebration({
-	trigger,
-}: {
-	trigger: string | undefined;
-}) {
+export function DisplayCelebration({ trigger }: { trigger: string | undefined }) {
 	useEffect(() => {
 		if (!trigger) {
 			return;
@@ -601,9 +543,7 @@ export function DisplayBoard({
 						</h1>
 						<p className="display-artist">
 							{snapshot.nowPlaying?.artist ?? "Pick the first anthem"}{" "}
-							{snapshot.nowPlaying
-								? `• ${snapshot.nowPlaying.submitter_name}`
-								: ""}
+							{snapshot.nowPlaying ? `• ${snapshot.nowPlaying.submitter_name}` : ""}
 						</p>
 					</div>
 					{joinUrl ? <CompactQrCard url={joinUrl} /> : null}
@@ -636,10 +576,7 @@ export function DisplayBoard({
 							{snapshot.stats.map((stat) => (
 								<div key={stat.label} className="display-stat-card">
 									<p className="display-stat-label">{stat.label}</p>
-									<p
-										className="display-stat-value"
-										style={{ color: stat.accent ?? "#fff8df" }}
-									>
+									<p className="display-stat-value" style={{ color: stat.accent ?? "#fff8df" }}>
 										{stat.value}
 									</p>
 								</div>
@@ -763,20 +700,10 @@ export function DisplayPlayer({
 	);
 }
 
-export function HostNavTiles({
-	code,
-	hostToken,
-}: {
-	code: string;
-	hostToken: string;
-}) {
+export function HostNavTiles({ code, hostToken }: { code: string; hostToken: string }) {
 	return (
 		<div className="grid gap-3 sm:grid-cols-3">
-			<Link
-				to="/room/$code"
-				params={{ code }}
-				className="kapow-button kapow-button--nav"
-			>
+			<Link to="/room/$code" params={{ code }} className="kapow-button kapow-button--nav">
 				<Music2 size={16} />
 				Guest View
 			</Link>
@@ -809,11 +736,7 @@ export function GuestNavTiles({ code }: { code: string }) {
 				<ArrowLeft size={16} />
 				Back Home
 			</Link>
-			<Link
-				to="/room/$code"
-				params={{ code }}
-				className="kapow-button kapow-button--nav"
-			>
+			<Link to="/room/$code" params={{ code }} className="kapow-button kapow-button--nav">
 				<Music2 size={16} />
 				Guest View
 			</Link>

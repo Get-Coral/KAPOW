@@ -32,10 +32,7 @@ export const Route = createFileRoute("/host/$code")({
 	component: HostRoomPage,
 });
 
-function reorderHostSnapshot(
-	snapshot: RoomSnapshot,
-	orderedQueueIds: string[],
-) {
+function reorderHostSnapshot(snapshot: RoomSnapshot, orderedQueueIds: string[]) {
 	const queueById = new Map(snapshot.queue.map((item) => [item.id, item]));
 	const reorderedItems = orderedQueueIds
 		.map((id) => queueById.get(id))
@@ -67,13 +64,10 @@ function reorderHostSnapshot(
 		}),
 	) as QueueItem[];
 	const pendingQueue = nextQueue.filter((item) => item.status === "pending");
-	const nowPlaying =
-		nextQueue.find((item) => item.status === "playing") ?? null;
+	const nowPlaying = nextQueue.find((item) => item.status === "playing") ?? null;
 	const nextUp =
 		nextQueue.find(
-			(item) =>
-				item.status === "waiting" &&
-				(!nowPlaying || item.position > nowPlaying.position),
+			(item) => item.status === "waiting" && (!nowPlaying || item.position > nowPlaying.position),
 		) ??
 		nextQueue.find((item) => item.status === "waiting") ??
 		null;
@@ -156,9 +150,7 @@ function HostRoomPage() {
 		onMutate: async (orderedQueueIds) => {
 			await queryClient.cancelQueries({ queryKey: roomQueryKey });
 			const previousSnapshot =
-				queryClient.getQueryData<Awaited<ReturnType<typeof getRoomSnapshot>>>(
-					roomQueryKey,
-				);
+				queryClient.getQueryData<Awaited<ReturnType<typeof getRoomSnapshot>>>(roomQueryKey);
 
 			if (previousSnapshot) {
 				queryClient.setQueryData(
@@ -209,10 +201,7 @@ function HostRoomPage() {
 	if (roomQuery.isPending) {
 		return (
 			<main className="page-shell">
-				<EmptyState
-					title="Loading host deck..."
-					body="Bringing your queue controls online."
-				/>
+				<EmptyState title="Loading host deck..." body="Bringing your queue controls online." />
 			</main>
 		);
 	}
@@ -248,25 +237,17 @@ function HostRoomPage() {
 							<div>
 								<p className="hero-eyebrow">Room Status</p>
 								<h2 className="section-title">
-									{snapshot.room.status === "open"
-										? "Open for submissions"
-										: "Room closed"}
+									{snapshot.room.status === "open" ? "Open for submissions" : "Room closed"}
 								</h2>
 							</div>
 							<button
 								type="button"
 								className="kapow-button kapow-button--accent"
 								onClick={() =>
-									statusMutation.mutate(
-										snapshot.room.status === "open" ? "closed" : "open",
-									)
+									statusMutation.mutate(snapshot.room.status === "open" ? "closed" : "open")
 								}
 							>
-								{snapshot.room.status === "open" ? (
-									<Lock size={16} />
-								) : (
-									<LockOpen size={16} />
-								)}
+								{snapshot.room.status === "open" ? <Lock size={16} /> : <LockOpen size={16} />}
 								{snapshot.room.status === "open" ? "Close Room" : "Reopen Room"}
 							</button>
 						</div>

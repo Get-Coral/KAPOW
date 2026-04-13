@@ -26,9 +26,7 @@ function readFirstServerEnv(names: string[]) {
 		}
 	}
 
-	throw new Error(
-		`Missing required environment variable: ${names.join(" or ")}`,
-	);
+	throw new Error(`Missing required environment variable: ${names.join(" or ")}`);
 }
 
 export function getPublicEnv() {

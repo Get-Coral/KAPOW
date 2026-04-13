@@ -36,9 +36,7 @@ export function useRoomLiveQuery(code: string, hostToken?: string) {
 		const supabase = getSupabaseBrowserClient();
 		const roomId = query.data.room.id;
 		const queueIds = queueIdsKey ? queueIdsKey.split(",") : [];
-		const channel = supabase.channel(
-			`kapow-room-${roomId}-${hostToken ?? "guest"}`,
-		);
+		const channel = supabase.channel(`kapow-room-${roomId}-${hostToken ?? "guest"}`);
 		const invalidate = () =>
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.room(code, hostToken),

@@ -2,12 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { useEffect } from "react";
-import {
-	BackHomeButton,
-	DisplayBoard,
-	EmptyState,
-	QrCard,
-} from "#/components/kapow-ui";
+import { BackHomeButton, DisplayBoard, EmptyState, QrCard } from "#/components/kapow-ui";
 import { useRoomLiveQuery } from "#/hooks/use-room-live-query";
 import { queryKeys } from "#/lib/query";
 import { buildAbsoluteUrl } from "#/lib/utils";

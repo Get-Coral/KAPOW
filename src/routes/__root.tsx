@@ -59,8 +59,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	const publicEnv =
 		typeof window === "undefined"
 			? {
-					supabaseUrl:
-						process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
+					supabaseUrl: process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL ?? "",
 					supabaseAnonKey:
 						process.env.SUPABASE_ANON_KEY ??
 						process.env.SUPABASE_PUBLISHABLE_KEY ??

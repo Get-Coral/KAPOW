@@ -1,9 +1,5 @@
 import { createHash } from "node:crypto";
-import {
-	getRequest,
-	getRequestHeader,
-	getRequestIP,
-} from "@tanstack/react-start/server";
+import { getRequest, getRequestHeader, getRequestIP } from "@tanstack/react-start/server";
 
 export function getFingerprint() {
 	const request = getRequest();

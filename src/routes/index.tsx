@@ -2,12 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DoorOpen, PartyPopper, Radio } from "lucide-react";
 import { useState } from "react";
-import {
-	ComicWordmark,
-	HeroFrame,
-	JoinCodeInput,
-	NeonPanel,
-} from "#/components/kapow-ui";
+import { ComicWordmark, HeroFrame, JoinCodeInput, NeonPanel } from "#/components/kapow-ui";
 import { formatJoinCode } from "#/lib/utils";
 import { createRoom } from "#/server/rooms";
 
@@ -65,8 +60,7 @@ function LandingPage() {
 					<p className="hero-eyebrow">Host Tonight</p>
 					<h2 className="section-title">Create a brand new room</h2>
 					<p className="section-copy">
-						You’ll get a host token, guest link, display view, and QR code in
-						one move.
+						You’ll get a host token, guest link, display view, and QR code in one move.
 					</p>
 					{createRoomMutation.isError ? (
 						<div className="mt-5 rounded-2xl border border-[#ff8d6b]/35 bg-[#4a1120]/60 p-4 text-left">
@@ -93,8 +87,7 @@ function LandingPage() {
 					<p className="hero-eyebrow">Join Existing Room</p>
 					<h2 className="section-title">Already got the code?</h2>
 					<p className="section-copy">
-						Hop in as a guest and start feeding the queue your best karaoke
-						pick.
+						Hop in as a guest and start feeding the queue your best karaoke pick.
 					</p>
 					<div className="mt-6">
 						<JoinCodeInput

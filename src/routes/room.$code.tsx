@@ -12,10 +12,7 @@ import {
 	SearchField,
 	SearchResults,
 } from "#/components/kapow-ui";
-import {
-	getClientHeaders,
-	useRoomLiveQuery,
-} from "#/hooks/use-room-live-query";
+import { getClientHeaders, useRoomLiveQuery } from "#/hooks/use-room-live-query";
 import { queryKeys } from "#/lib/query";
 import { getStoredGuestName, setStoredGuestName } from "#/lib/storage";
 import type { SongSearchResult } from "#/lib/types";
@@ -66,9 +63,7 @@ function GuestRoomPage() {
 			const previousSearch = search;
 			const previousResults = results;
 
-			setSubmissionNotice(
-				`Sending "${song.title}" to the host for approval...`,
-			);
+			setSubmissionNotice(`Sending "${song.title}" to the host for approval...`);
 			setResults([]);
 			setSearch("");
 
@@ -190,12 +185,9 @@ function GuestRoomPage() {
 								<p className="text-sm font-semibold tracking-[0.18em] uppercase text-white/60">
 									Singer ID locked
 								</p>
-								<p className="mt-2 text-2xl font-semibold text-white">
-									{guestName}
-								</p>
+								<p className="mt-2 text-2xl font-semibold text-white">{guestName}</p>
 								<p className="mt-2 text-sm text-white/70">
-									This name now follows your submissions and votes for this
-									session.
+									This name now follows your submissions and votes for this session.
 								</p>
 							</div>
 						) : (
@@ -228,11 +220,7 @@ function GuestRoomPage() {
 						<p className="hero-eyebrow">Find A Song</p>
 						<h2 className="section-title">Search the karaoke vault</h2>
 						<div className="mt-4">
-							<SearchField
-								value={search}
-								onChange={setSearch}
-								onSubmit={handleSearch}
-							/>
+							<SearchField value={search} onChange={setSearch} onSubmit={handleSearch} />
 						</div>
 						{!guestName.trim() ? (
 							<p className="mt-4 text-sm text-[#ffd84d]">
@@ -246,18 +234,14 @@ function GuestRoomPage() {
 								disabled={!guestName.trim() || addSongMutation.isPending}
 								onAdd={(song) => addSongMutation.mutate(song)}
 							/>
-							{search.trim() &&
-							!searchMutation.isPending &&
-							results.length === 0 ? (
+							{search.trim() && !searchMutation.isPending && results.length === 0 ? (
 								<p className="mt-4 text-sm text-white/70">
-									No embeddable karaoke videos found for that search. Try a more
-									specific song title or artist.
+									No embeddable karaoke videos found for that search. Try a more specific song title
+									or artist.
 								</p>
 							) : null}
 							{submissionNotice ? (
-								<p className="mt-4 text-sm text-[#ffd84d]">
-									{submissionNotice}
-								</p>
+								<p className="mt-4 text-sm text-[#ffd84d]">{submissionNotice}</p>
 							) : null}
 						</div>
 					</NeonPanel>

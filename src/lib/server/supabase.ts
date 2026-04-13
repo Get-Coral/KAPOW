@@ -11,9 +11,7 @@ export function createServerSupabaseClient() {
 		process.env.VITE_SUPABASE_KEY;
 
 	if (!url || !anonKey) {
-		throw new Error(
-			"Missing SUPABASE_URL/VITE_SUPABASE_URL or a Supabase anon/publishable key",
-		);
+		throw new Error("Missing SUPABASE_URL/VITE_SUPABASE_URL or a Supabase anon/publishable key");
 	}
 
 	return createClient(url, anonKey, {

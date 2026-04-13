@@ -37,10 +37,7 @@ function fingerprintAlias(fingerprint: string) {
 	return `Guest ${fingerprint.slice(0, 4).toUpperCase()}`;
 }
 
-function buildSessionStats(
-	queue: QueueItem[],
-	votes: VoteRow[],
-): SessionStat[] {
+function buildSessionStats(queue: QueueItem[], votes: VoteRow[]): SessionStat[] {
 	const singerCounts = queue.reduce<Record<string, number>>((acc, item) => {
 		acc[item.submitter_name] = (acc[item.submitter_name] ?? 0) + 1;
 		return acc;
@@ -129,10 +126,7 @@ async function getRoomForCode(code: string) {
 	return result.data;
 }
 
-async function loadSnapshot(
-	code: string,
-	hostToken?: string,
-): Promise<RoomSnapshot> {
+async function loadSnapshot(code: string, hostToken?: string): Promise<RoomSnapshot> {
 	const supabase = createServerSupabaseClient();
 	const room = await getRoomForCode(code);
 	const fingerprint = getFingerprint();
@@ -190,13 +184,10 @@ async function loadSnapshot(
 	const pendingQueue = allQueue.filter((item) => item.status === "pending");
 	const approvedQueue = allQueue.filter((item) => item.status !== "pending");
 	const visibleQueue = hostToken === room.host_token ? allQueue : approvedQueue;
-	const nowPlaying =
-		approvedQueue.find((item) => item.status === "playing") ?? null;
+	const nowPlaying = approvedQueue.find((item) => item.status === "playing") ?? null;
 	const nextUp =
 		approvedQueue.find(
-			(item) =>
-				item.status === "waiting" &&
-				(!nowPlaying || item.position > nowPlaying.position),
+			(item) => item.status === "waiting" && (!nowPlaying || item.position > nowPlaying.position),
 		) ??
 		approvedQueue.find((item) => item.status === "waiting") ??
 		null;
@@ -315,10 +306,7 @@ async function fetchYouTubeResults(query: string): Promise<SongSearchResult[]> {
 		}>;
 	};
 	const embeddableMap = new Map(
-		(detailsJson.items ?? []).map((item) => [
-			item.id ?? "",
-			item.status?.embeddable,
-		]),
+		(detailsJson.items ?? []).map((item) => [item.id ?? "", item.status?.embeddable]),
 	);
 
 	return searchItems
@@ -343,8 +331,7 @@ export const searchYouTube = createServerFn({ method: "GET" })
 			.maybeSingle();
 
 		if (cached.data) {
-			const ageHours =
-				(Date.now() - new Date(cached.data.created_at).getTime()) / 3_600_000;
+			const ageHours = (Date.now() - new Date(cached.data.created_at).getTime()) / 3_600_000;
 
 			if (ageHours < CACHE_TTL_HOURS) {
 				return cached.data.results as SongSearchResult[];
@@ -399,8 +386,7 @@ export const createRoom = createServerFn({ method: "POST" }).handler(
 export const getRoomSnapshot = createServerFn({ method: "GET" })
 	.inputValidator((input: { code: string; hostToken?: string }) => ({
 		code: requireString(input.code, "room code"),
-		hostToken:
-			typeof input.hostToken === "string" ? input.hostToken : undefined,
+		hostToken: typeof input.hostToken === "string" ? input.hostToken : undefined,
 	}))
 	.handler(async ({ data }) => loadSnapshot(data.code, data.hostToken));
 
@@ -419,10 +405,7 @@ export const addSongToQueue = createServerFn({ method: "POST" })
 			songTitle: requireString(input.songTitle, "song title"),
 			artist: requireString(input.artist, "artist"),
 			thumbnailUrl: requireString(input.thumbnailUrl, "thumbnail"),
-			submitterName: requireString(input.submitterName, "submitter name").slice(
-				0,
-				32,
-			),
+			submitterName: requireString(input.submitterName, "submitter name").slice(0, 32),
 		}),
 	)
 	.handler(async ({ data }) => {
@@ -464,16 +447,11 @@ export const addSongToQueue = createServerFn({ method: "POST" })
 	});
 
 export const toggleVote = createServerFn({ method: "POST" })
-	.inputValidator(
-		(input: { code: string; queueId: string; voterName?: string }) => ({
-			code: requireString(input.code, "room code"),
-			queueId: requireString(input.queueId, "queue id"),
-			voterName:
-				typeof input.voterName === "string"
-					? input.voterName.trim().slice(0, 32)
-					: "",
-		}),
-	)
+	.inputValidator((input: { code: string; queueId: string; voterName?: string }) => ({
+		code: requireString(input.code, "room code"),
+		queueId: requireString(input.queueId, "queue id"),
+		voterName: typeof input.voterName === "string" ? input.voterName.trim().slice(0, 32) : "",
+	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const fingerprint = getFingerprint();
@@ -489,10 +467,7 @@ export const toggleVote = createServerFn({ method: "POST" })
 		}
 
 		if (existingVote.data?.id) {
-			const removeResult = await supabase
-				.from("votes")
-				.delete()
-				.eq("id", existingVote.data.id);
+			const removeResult = await supabase.from("votes").delete().eq("id", existingVote.data.id);
 
 			if (removeResult.error) {
 				throw new Error(removeResult.error.message);
@@ -513,24 +488,15 @@ export const toggleVote = createServerFn({ method: "POST" })
 	});
 
 export const setRoomStatus = createServerFn({ method: "POST" })
-	.inputValidator(
-		(input: {
-			code: string;
-			hostToken: string;
-			status: "open" | "closed";
-		}) => ({
-			code: requireString(input.code, "room code"),
-			hostToken: requireString(input.hostToken, "host token"),
-			status: input.status,
-		}),
-	)
+	.inputValidator((input: { code: string; hostToken: string; status: "open" | "closed" }) => ({
+		code: requireString(input.code, "room code"),
+		hostToken: requireString(input.hostToken, "host token"),
+		status: input.status,
+	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const room = await ensureHostRoom(data.code, data.hostToken);
-		const result = await supabase
-			.from("rooms")
-			.update({ status: data.status })
-			.eq("id", room.id);
+		const result = await supabase.from("rooms").update({ status: data.status }).eq("id", room.id);
 
 		if (result.error) {
 			throw new Error(result.error.message);
@@ -541,12 +507,7 @@ export const setRoomStatus = createServerFn({ method: "POST" })
 
 export const setQueueStatus = createServerFn({ method: "POST" })
 	.inputValidator(
-		(input: {
-			code: string;
-			hostToken: string;
-			queueId: string;
-			status: "playing" | "done";
-		}) => ({
+		(input: { code: string; hostToken: string; queueId: string; status: "playing" | "done" }) => ({
 			code: requireString(input.code, "room code"),
 			hostToken: requireString(input.hostToken, "host token"),
 			queueId: requireString(input.queueId, "queue id"),
@@ -583,20 +544,15 @@ export const setQueueStatus = createServerFn({ method: "POST" })
 	});
 
 export const removeQueueItem = createServerFn({ method: "POST" })
-	.inputValidator(
-		(input: { code: string; hostToken: string; queueId: string }) => ({
-			code: requireString(input.code, "room code"),
-			hostToken: requireString(input.hostToken, "host token"),
-			queueId: requireString(input.queueId, "queue id"),
-		}),
-	)
+	.inputValidator((input: { code: string; hostToken: string; queueId: string }) => ({
+		code: requireString(input.code, "room code"),
+		hostToken: requireString(input.hostToken, "host token"),
+		queueId: requireString(input.queueId, "queue id"),
+	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const room = await ensureHostRoom(data.code, data.hostToken);
-		const voteDelete = await supabase
-			.from("votes")
-			.delete()
-			.eq("queue_id", data.queueId);
+		const voteDelete = await supabase.from("votes").delete().eq("queue_id", data.queueId);
 
 		if (voteDelete.error) {
 			throw new Error(voteDelete.error.message);
@@ -616,26 +572,17 @@ export const removeQueueItem = createServerFn({ method: "POST" })
 	});
 
 export const reorderQueue = createServerFn({ method: "POST" })
-	.inputValidator(
-		(input: {
-			code: string;
-			hostToken: string;
-			orderedQueueIds: string[];
-		}) => ({
-			code: requireString(input.code, "room code"),
-			hostToken: requireString(input.hostToken, "host token"),
-			orderedQueueIds: input.orderedQueueIds.filter(
-				(value): value is string => typeof value === "string",
-			),
-		}),
-	)
+	.inputValidator((input: { code: string; hostToken: string; orderedQueueIds: string[] }) => ({
+		code: requireString(input.code, "room code"),
+		hostToken: requireString(input.hostToken, "host token"),
+		orderedQueueIds: input.orderedQueueIds.filter(
+			(value): value is string => typeof value === "string",
+		),
+	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const room = await ensureHostRoom(data.code, data.hostToken);
-		const queueResult = await supabase
-			.from("queue")
-			.select("id, status")
-			.eq("room_id", room.id);
+		const queueResult = await supabase.from("queue").select("id, status").eq("room_id", room.id);
 
 		if (queueResult.error) {
 			throw new Error(queueResult.error.message);
@@ -643,14 +590,10 @@ export const reorderQueue = createServerFn({ method: "POST" })
 
 		const reorderableIds = new Set(
 			(queueResult.data ?? [])
-				.filter(
-					(item) => item.status === "playing" || item.status === "waiting",
-				)
+				.filter((item) => item.status === "playing" || item.status === "waiting")
 				.map((item) => item.id),
 		);
-		const orderedQueueIds = data.orderedQueueIds.filter((id) =>
-			reorderableIds.has(id),
-		);
+		const orderedQueueIds = data.orderedQueueIds.filter((id) => reorderableIds.has(id));
 
 		const updateResults = await Promise.all(
 			orderedQueueIds.map((id, index) =>
@@ -672,13 +615,11 @@ export const reorderQueue = createServerFn({ method: "POST" })
 	});
 
 export const approveQueueItem = createServerFn({ method: "POST" })
-	.inputValidator(
-		(input: { code: string; hostToken: string; queueId: string }) => ({
-			code: requireString(input.code, "room code"),
-			hostToken: requireString(input.hostToken, "host token"),
-			queueId: requireString(input.queueId, "queue id"),
-		}),
-	)
+	.inputValidator((input: { code: string; hostToken: string; queueId: string }) => ({
+		code: requireString(input.code, "room code"),
+		hostToken: requireString(input.hostToken, "host token"),
+		queueId: requireString(input.queueId, "queue id"),
+	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
 		const room = await ensureHostRoom(data.code, data.hostToken);
@@ -699,10 +640,7 @@ export const approveQueueItem = createServerFn({ method: "POST" })
 export const advanceQueue = createServerFn({ method: "POST" })
 	.inputValidator((input: { code: string; finishedQueueId?: string }) => ({
 		code: requireString(input.code, "room code"),
-		finishedQueueId:
-			typeof input.finishedQueueId === "string"
-				? input.finishedQueueId
-				: undefined,
+		finishedQueueId: typeof input.finishedQueueId === "string" ? input.finishedQueueId : undefined,
 	}))
 	.handler(async ({ data }) => {
 		const supabase = createServerSupabaseClient();
@@ -730,8 +668,7 @@ export const advanceQueue = createServerFn({ method: "POST" })
 		const nextToPlay =
 			data.finishedQueueId && nextWaiting?.id === data.finishedQueueId
 				? (snapshot.queue.find(
-						(item) =>
-							item.status === "waiting" && item.id !== data.finishedQueueId,
+						(item) => item.status === "waiting" && item.id !== data.finishedQueueId,
 					) ?? null)
 				: nextWaiting;
 
