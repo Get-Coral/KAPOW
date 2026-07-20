@@ -9,6 +9,7 @@ import {
 	useRouter,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+import { BackHomeButton, EmptyState } from "#/components/kapow-ui";
 import TanStackQueryDevtools from "../integrations/tanstack-query/devtools";
 import appCss from "../styles.css?url";
 
@@ -51,8 +52,21 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 		],
 	}),
 	component: () => <Outlet />,
+	notFoundComponent: NotFound,
 	shellComponent: RootDocument,
 });
+
+function NotFound() {
+	return (
+		<main className="page-shell">
+			<EmptyState
+				title="Page not found"
+				body="That link doesn’t lead anywhere. Host and guest rooms live at their own codes—head back home to create or join a room."
+				action={<BackHomeButton />}
+			/>
+		</main>
+	);
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	const router = useRouter();
