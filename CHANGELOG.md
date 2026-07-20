@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2](https://github.com/Get-Coral/KAPOW/compare/v1.0.1...v1.0.2) (2026-07-20)
+
+
+### Bug Fixes
+
+* add notFoundComponent to root route ([07d3df9](https://github.com/Get-Coral/KAPOW/commit/07d3df921a5b6a30b78d44cce83786f6f9e16cba))
+* add notFoundComponent to root route ([819f22b](https://github.com/Get-Coral/KAPOW/commit/819f22b8009bebd7ce0d22283e504c1817e813e1))
+
 ## [1.0.1](https://github.com/Get-Coral/KAPOW/compare/v1.0.0...v1.0.1) (2026-04-13)
 
 
