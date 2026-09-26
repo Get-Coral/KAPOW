@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.2](https://github.com/Get-Coral/KAPOW/compare/v1.0.1...v1.0.2) (2026-09-26)
+
+
+### Bug Fixes
+
+* add notFoundComponent to root route ([07d3df9](https://github.com/Get-Coral/KAPOW/commit/07d3df921a5b6a30b78d44cce83786f6f9e16cba))
+* add notFoundComponent to root route ([819f22b](https://github.com/Get-Coral/KAPOW/commit/819f22b8009bebd7ce0d22283e504c1817e813e1))
+* pin pnpm explicitly so release-please cannot break the build ([a775f9e](https://github.com/Get-Coral/KAPOW/commit/a775f9ef7821d419c6383c2350959610c36fc38c))
+
 ## [1.0.1](https://github.com/Get-Coral/KAPOW/compare/v1.0.0...v1.0.1) (2026-04-13)
 
 
