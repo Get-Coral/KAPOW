@@ -1,6 +1,7 @@
 # KAPOW
 
-[![Discord](https://img.shields.io/discord/[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-ElianCodes-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ElianCodes)
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-ElianCodes-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/ElianCodes)
+[![Discord](https://img.shields.io/discord/1495441903297237043?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/M3wzFpGbzp)
 [![Discord](https://img.shields.io/discord/1495441903297237043?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/M3wzFpGbzp)?label=Discord&logo=discord&logoColor=white&color=5865F2)](https://discord.gg/M3wzFpGbzp)
 
 Comic-book karaoke queue manager. Hosts spin up a room, guests scan a QR code and search for tracks, the crowd votes songs up the queue, and the host runs the night from a dedicated control booth.
@@ -73,6 +74,26 @@ npm run db:push:remote
 npm run build
 npm run preview
 ```
+
+## Docker
+
+The published image is [`getcoral/kapow`](https://hub.docker.com/r/getcoral/kapow):
+
+```bash
+docker run -p 3000:3000 \
+  -e SUPABASE_URL=https://your-project.supabase.co \
+  -e SUPABASE_PUBLISHABLE_KEY=your-key \
+  -e YOUTUBE_API_KEY=your-key \
+  getcoral/kapow:latest
+```
+
+Or build it yourself:
+
+```bash
+docker build -t kapow .
+```
+
+Published automatically to [`getcoral/kapow`](https://hub.docker.com/r/getcoral/kapow) on Docker Hub on every release via GitHub Actions.
 
 ## Code quality
 
