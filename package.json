@@ -47,7 +47,7 @@
     "tailwindcss": "^4.1.18"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.5",
+    "@biomejs/biome": "2.5.14",
     "@get-coral/biome-config": "^0.2.0",
     "@get-coral/tsconfig": "^0.2.0",
     "@tailwindcss/typography": "^0.5.16",
